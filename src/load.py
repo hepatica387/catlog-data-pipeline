@@ -53,27 +53,22 @@ VALUES (
 
 load_dotenv(dotenv_path=ENV_FILE)
 
-required_env_names = [
-    "DB_HOST",
-    "DB_PORT",
-    "DB_USER",
-    "DB_PASSWORD",
-    "DB_NAME",
-]
 
-missing_names = [name for name in required_env_names if not os.getenv(name)]
+def get_db_config():
+    config = {
+        "host": os.getenv("DB_HOST"),
+        "port": os.getenv("DB_PORT"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "database": os.getenv("DB_NAME"),
+    }
 
-if missing_names:
-    raise ValueError(f"필수 환경 변수가 없습니다. {missing_names}")
+    missing = [key for key, value in config.items() if not value]
 
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST"),
-    "port": int(os.getenv("DB_PORT")),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "database": os.getenv("DB_NAME"),
-    "charset": "utf8mb4",
-}
+    if missing:
+        raise ValueError(f"필수 환경 변수가 없습니다. {missing}")
+
+    return config
 
 
 def load_processed_csv(
@@ -105,7 +100,8 @@ def find_latest_processed_csv(
 
 
 def create_connection():
-    return pymysql.connect(**DB_CONFIG)
+    config = get_db_config()
+    return pymysql.connect(**config)
 
 
 def create_table(
