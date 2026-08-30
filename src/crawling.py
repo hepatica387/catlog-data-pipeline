@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from selenium import webdriver
@@ -7,7 +7,6 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
 )
-
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
