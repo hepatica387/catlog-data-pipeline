@@ -1,0 +1,7 @@
+pandas
+selenium
+beautifulsoup4
+python-dotenv
+requests
+PyMySQL
+ruff
