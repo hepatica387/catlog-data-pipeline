@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install dependencies
         run: |
@@ -30,8 +30,44 @@ jobs:
 
       - name: Check Python syntax
         run: |
-          python -m compileall src
+          python -m compileall src main.py
 
       - name: Run tests
         run: |
           python -m pytest
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Set up SAM
+        uses: aws-actions/setup-sam@v2
+
+      - name: SAM build
+        run: sam build
+
+      - name: SAM deploy
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              DbHost=${{ vars.DB_HOST }} \
+              DbSecretArn=${{ vars.DB_SECRET_ARN }} \
+              LoadSubnetId=${{ vars.LOAD_SUBNET_ID }} \
+              LoadSecurityGroupId=${{ vars.LOAD_SECURITY_GROUP_ID }}

@@ -26,3 +26,8 @@ Thumbs.db
 data/raw/
 data/interim/
 data/processed/
+
+# build
+.aws-sam
+build.toml
+
