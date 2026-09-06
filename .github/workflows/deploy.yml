@@ -1,0 +1,77 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. CI에서 검증한 동일 Commit Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # 2. Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 3. AWS SAM CLI
+      - name: Set up AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      # 4. GitHub OIDC -> AWS IAM Role
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: catlog-pipeline-github-actions
+
+      # 5. AWS 인증 확인
+      - name: Verify AWS identity
+        run: |
+          aws sts get-caller-identity
+
+      # 6. SAM Template 검증
+      - name: Validate SAM template
+        run: |
+          sam validate --lint
+
+      # 7. SAM Build
+      - name: Build SAM application
+        run: |
+          sam build
+
+      # 8. AWS 배포
+      - name: Deploy SAM application
+        run: |
+          sam deploy \
+            --stack-name catlog-data-pipeline \
+            --region "${{ vars.AWS_REGION }}" \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              DbHost="${{ vars.DB_HOST }}" \
+              DbPort="3306" \
+              DbName="catlog" \
+              DbSecretArn="${{ vars.DB_SECRET_ARN }}" \
+              LoadSubnetId="${{ vars.LOAD_SUBNET_ID }}" \
+              LoadSecurityGroupId="${{ vars.LOAD_SECURITY_GROUP_ID }}"
