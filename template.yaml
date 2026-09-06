@@ -5,7 +5,7 @@ Description: Catlog Data Collection Pipeline
 
 Globals:
   Function:
-    Runtime: python3.14
+    Runtime: python3.12
     Timeout: 300
     MemorySize: 512
 
