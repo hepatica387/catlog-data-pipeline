@@ -189,6 +189,9 @@ Resources:
 
           ## RDS가 관리하는 Secrets Manager Secret ARN
           DB_SECRET_ARN: !Ref DbSecretArn
+          
+      ## Load Lambda를 RDS와 동일 VPC에 연결
+      VpcConfig:
 
       ## Load Lambda가 사용할 Security Group
         SecurityGroupIds:
